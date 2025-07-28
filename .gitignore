@@ -7,3 +7,20 @@ env/
 
 # Environment variables
 .env
+
+# Package metadata
+Project1_Document_portal.egg-info/ 
+
+# Log files
+logs/ 
+
+# Py cache files
+*.pyc
+
+
+# data directory
+data/
+
+# local test files
+test.py
+
