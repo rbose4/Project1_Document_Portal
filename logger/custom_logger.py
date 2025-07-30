@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 import logging
 import structlog
+from structlog.processors import CallsiteParameterAdder, CallsiteParameter
 
 
 class CustomLogger:
@@ -56,10 +57,13 @@ class CustomLogger:
             processors=[
                 structlog.processors.TimeStamper(fmt='iso', utc=True, key='timestamp'),
                 structlog.processors.add_log_level,
-                structlog.processors.CallsiteParameterAdder(
-                    include=['filename', 'lineno', 'funcName']
+                CallsiteParameterAdder(
+                    [CallsiteParameter.FILENAME,
+                     CallsiteParameter.LINENO,
+                     CallsiteParameter.FUNC_NAME
+                     ]  # Add filename and line number to the log
                 ),
-                structlog.processors.EventRenamer(to='error message'),
+                structlog.processors.EventRenamer(to='error_message'),
                 structlog.processors.JSONRenderer(),
             ],
             logger_factory=structlog.stdlib.LoggerFactory(),
