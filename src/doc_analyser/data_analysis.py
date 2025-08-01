@@ -45,6 +45,7 @@ class DocumentAnalyzer:
                 "format_instructions": self.parser.get_format_instructions()
             })
             self.log.info("Metadata extraction completed", keys=list(response.keys()))
+            return response
         except Exception as e:
             app_exc = DocumentPortalException(e, sys)
             self.log.error(app_exc)
