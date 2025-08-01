@@ -20,7 +20,7 @@ logs/
 
 
 # data directory
-# data/
+data/
 
 # local test files
 test.py
