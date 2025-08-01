@@ -63,7 +63,7 @@ class CustomLogger:
                      CallsiteParameter.FUNC_NAME
                      ]  # Add filename and line number to the log
                 ),
-                structlog.processors.EventRenamer(to='error_message'),
+                structlog.processors.EventRenamer(to='event'),
                 structlog.processors.JSONRenderer(),
             ],
             logger_factory=structlog.stdlib.LoggerFactory(),
