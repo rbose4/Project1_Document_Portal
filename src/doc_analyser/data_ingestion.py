@@ -80,8 +80,10 @@ class DocumentHandler:
 if __name__ == "__main__":
     from pathlib import Path
     from io import BytesIO
-    
-    pdf_path = r"/Users/ROOPS/Documents/VS-Workspace/LLMOPS/Project1_Document_Portal/data/document_analysis/sample.pdf"
+    # Example usage
+    # Replace with the actual path to your PDF file
+    # pdf_path = r"/Users/ROOPS/Documents/VS-Workspace/LLMOPS/Project1_Document_Portal/data/document_analysis/sample.pdf"
+    pdf_path = r"/Users/ROOPS/Documents/VS-Workspace/LLMOPS/Project1_Document_Portal/data/document_analysis/NIPS-2017-Paper.pdf"
     class MockFile:
         def __init__(self, file_path):
             self.name = Path(file_path).name
