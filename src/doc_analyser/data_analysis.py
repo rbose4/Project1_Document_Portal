@@ -28,5 +28,24 @@ class DocumentAnalyzer:
             app_exc = DocumentPortalException(e, sys)
             self.log.error(app_exc)
             raise app_exc
-    def analyze_document(self):
-        pass
+    def analyze_document(self, document_text: str) -> dict:
+        """
+        Analyze the text in the document using the LLM and extract strcutured metadata and summary.
+        Args:
+            document_text (str): The text content of the document to be analyzed.
+        Returns:
+            dict: A dictionary containing the structured metadata and summary of the document.
+        """
+        try:
+            chain = self.prompt|self.llm|self.fixing_parser
+            
+            self.log.info("Metdata analysis started")
+            response = chain.invoke({
+                "document_text": document_text,
+                "format_instructions": self.parser.get_format_instructions()
+            })
+            self.log.info("Metadata extraction completed", keys=list(response.keys()))
+        except Exception as e:
+            app_exc = DocumentPortalException(e, sys)
+            self.log.error(app_exc)
+            raise app_exc
