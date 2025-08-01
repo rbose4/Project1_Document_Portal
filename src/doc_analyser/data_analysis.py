@@ -14,7 +14,15 @@ class DocumentAnalyzer:
         try:
             self.model_loader = ModelLoader()
             self.llm = self.model_loader.load_llm()
-            self.parser = JsonOutputParser()
+            
+            # prepare parsers
+            self.parser = JsonOutputParser(pydantic_object=MetaData)
+            self.fixing_parser = OutputFixingParser.from_llm(
+                llm=self.llm,
+                parser=self.parser
+            )
+            self.prompt = prompt
+            self.log.info("DocumentAnalyzer initialized successfully.")
             
         except Exception as e:
             app_exc = DocumentPortalException(e, sys)
