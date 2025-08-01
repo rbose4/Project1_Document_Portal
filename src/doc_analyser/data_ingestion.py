@@ -82,8 +82,8 @@ if __name__ == "__main__":
     from io import BytesIO
     # Example usage
     # Replace with the actual path to your PDF file
-    # pdf_path = r"/Users/ROOPS/Documents/VS-Workspace/LLMOPS/Project1_Document_Portal/data/document_analysis/sample.pdf"
-    pdf_path = r"/Users/ROOPS/Documents/VS-Workspace/LLMOPS/Project1_Document_Portal/data/document_analysis/NIPS-2017-Paper.pdf"
+    pdf_path = r"/Users/ROOPS/Documents/VS-Workspace/LLMOPS/Project1_Document_Portal/data/document_analysis/sample.pdf"
+    # pdf_path = r"/Users/ROOPS/Documents/VS-Workspace/LLMOPS/Project1_Document_Portal/data/document_analysis/NIPS-2017-attention-is-all-you-need-Paper.pdf"
     class MockFile:
         def __init__(self, file_path):
             self.name = Path(file_path).name
