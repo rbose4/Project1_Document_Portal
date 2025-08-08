@@ -59,7 +59,7 @@ class ModelLoader:
         llm_config = llm_block[provider_key]
         provider = llm_config.get("provider")
         model_name = llm_config.get("model_name")
-        tempature = llm_config.get("temperature", 0.2)
+        temperature = llm_config.get("temperature", 0.2)
         max_tokens = llm_config.get("max_tokens", 2048)
         
         log.info("Loading language model ... ", provider=provider, model_name=model_name, tempature=tempature, max_tokens=max_tokens)
@@ -67,7 +67,7 @@ class ModelLoader:
         if provider == "google":
             llm = ChatGoogleGenerativeAI(
                 model=model_name,
-                tempature=tempature,
+                tempature=temperature,
                 max_output_tokens=max_tokens,
                 api_key= self.api_keys["GOOGLE_API_KEY"]
             )
@@ -75,7 +75,7 @@ class ModelLoader:
         elif provider == "groq":
             llm = ChatGroq(
                 model=model_name,
-                temperature=tempature,
+                temperature=temperature,
                 api_key=self.api_keys["GROQ_API_KEY"]
             )
             return llm
