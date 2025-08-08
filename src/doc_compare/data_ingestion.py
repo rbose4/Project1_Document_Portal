@@ -17,9 +17,27 @@ class DocumentIngestion:
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
     
-    def save_uploaded_files(self):
+    def save_uploaded_files(self, reference_file, actual_file):
         try:
-            pass
+            self.clean_old_sessions()
+            self.log.info("Existing files deleted successfully.")
+            
+            # updated version of the file
+            ref_path = self.base_dir/reference_file.name
+            # original file
+            act_path = self.base_dir/actual_file.name
+            
+            if not reference_file.name.endswith('.pdf') or not actual_file.name.endswith('.pdf'):
+                raise ValueError("Only PDF files are supported.")
+            
+            with fitz.open(ref_path,"wb") as f:
+                f.write(reference_file.getbuffer())
+            
+            with fitz.open(act_path,"wb") as f:
+                f.write(actual_file.getbuffer())
+            
+            self.log.info("Files saved successfully.", reference=str(ref_path), actual=str(act_path))
+            return ref_path, act_path
         except Exception as e:
             self.log.error(f"Error saving uploaded files: {e}")
             raise DocumentPortalException("An error occurred while saving the uploaded files", sys)
@@ -52,7 +70,12 @@ class DocumentIngestion:
         Deletes exisiting files at the specified paths
         """
         try:
-            pass
+            if self.base_dir.exists() and self.base_dir.is_dir():
+                for file in self.base_dir.iterdir():
+                    if file.is_file():
+                        file.unlink()
+                        self.log.info("File deleted", path=str(file))
+                    
         except Exception as e:
             self.log.error(f"Error deleting existing files: {e}")
             raise DocumentPortalException("An error occurred while cleaning old sessions", sys)
