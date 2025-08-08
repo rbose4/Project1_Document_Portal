@@ -15,13 +15,36 @@ class DocumentComparatorLLM:
     It compares the contents of the documents and identifies differences page-wise.
     """
     def __init__(self):
-        pass
+        self.log = CustomLogger().get_logger(__name__)
+        try:
+            self.loader = ModelLoader()
+            self.llm = self.loader.load_llm()
+            self.parser = JsonOutputParser(pydantic_object=SummaryResponse)
+            self.fixing_parser = OutputFixingParser.from_llm(
+                llm=self.llm,
+                parser=self.parser
+            )
+            self.prompt = prompt["document_comparison"]
+            self.chain = self.prompt | self.llm | self.parser | self.fixing_parser
+            self.log.info("DocumentComparatorLLM initialized successfully with model and parser.")
+        except Exception as e:
+            self.log.error(f"Error initializing DocumentComparatorLLM: {str(e)}")
+            raise DocumentPortalException("Error initializing DocumentComparatorLLM",sys)
     
-    def compare_documents(self):
+    def compare_documents(self, combined_docs:str) -> pd.DataFrame:
         """
         Compare two documents and return a structured comparison.  
         """
-        pass
+        try:
+            inputs = {
+                "combined_documents": combined_docs,
+                "format_instructions":self.parser.get_format_instructions()
+            }
+            self.log.info("Invoking document comparison LLM chain")
+            response = self.chain.invoke(inputs)
+        except Exception as e:
+            self.log.error(f"Error comparing documents: {str(e)}")
+            raise DocumentPortalException("Error comparing documents",sys)
     
     def _format_response(self):
         """
