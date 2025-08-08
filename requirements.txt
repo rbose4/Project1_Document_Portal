@@ -9,4 +9,5 @@ pypdf
 faiss-cpu
 structlog
 pymupdf
+pandas
 #-e . # to run setup.py
