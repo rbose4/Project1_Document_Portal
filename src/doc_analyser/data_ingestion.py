@@ -9,7 +9,7 @@ from exception.custom_exception import DocumentPortalException
 class DocumentHandler:
     """
     Handled PDF saving and reading operations.
-    Automatically logs all actions and supports session-based oraginzation.
+    Automatically logs all actions and supports session-based organization.
     """
     
     def __init__(self, data_dir=None, session_id=None):

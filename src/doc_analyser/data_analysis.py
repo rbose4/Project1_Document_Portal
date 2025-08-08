@@ -30,7 +30,7 @@ class DocumentAnalyzer:
             raise app_exc
     def analyze_document(self, document_text: str) -> dict:
         """
-        Analyze the text in the document using the LLM and extract strcutured metadata and summary.
+        Analyze the text in the document using the LLM and extract structured metadata and summary.
         Args:
             document_text (str): The text content of the document to be analyzed.
         Returns:
