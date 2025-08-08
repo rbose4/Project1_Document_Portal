@@ -27,7 +27,7 @@ class ModelLoader:
         self.api_keys = {key:os.getenv(key) for key in required_env_vars}
         missing_keys = [k for k,v in self.api_keys.items() if not v]
         if missing_keys:
-            log.errot("Missing required environment variables", missing_keys=missing_keys)
+            log.error("Missing required environment variables", missing_keys=missing_keys)
             raise DocumentPortalException(f"Missing required environment variables:" + "".join(missing_keys), sys)
         log.info("Environment variables validated", available_keys=[k for k in self.api_keys.keys() if self.api_keys[k]])
         
