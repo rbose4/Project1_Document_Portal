@@ -23,4 +23,4 @@ class ChangeFormat(BaseModel):
     Changes:str
 
 class SummaryResponse(RootModel[list[ChangeFormat]]):
-  pass
+    pass
