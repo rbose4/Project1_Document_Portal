@@ -42,12 +42,18 @@ class DocumentComparatorLLM:
             }
             self.log.info("Invoking document comparison LLM chain")
             response = self.chain.invoke(inputs)
+            return self._format_response(response_parsed=response)
         except Exception as e:
             self.log.error(f"Error comparing documents: {str(e)}")
             raise DocumentPortalException("Error comparing documents",sys)
     
-    def _format_response(self):
+    def _format_response(self, response_parsed:list[dict]) ->pd.DataFrame:
         """
         Format the response from the language model into a structured format.
         """
-        pass
+        try:
+            df = pd.DataFrame(response_parsed)
+            return df
+        except Exception as e:
+            self.log.error(f"Error formatting response: {str(e)}")
+            raise DocumentPortalException("Error formatting response",sys)
