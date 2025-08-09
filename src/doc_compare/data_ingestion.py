@@ -62,9 +62,27 @@ class DocumentIngestion:
             self.log.error(f"Error reading PDF: {e}")
             raise DocumentPortalException("An error occured while reading the PDF", sys)
     
-    def combine_pdfs(self):
-        pass
-    
+    def combine_pdfs(self) -> str:
+        """
+        Combine contents of reference and actual PDFs into a single string with file name and page numbers.
+        """
+        try:
+            content_dict = {}
+            doc_parts = []
+            for file_name in sorted(self.base_dir.iterdir()):
+                if file_name.is_file() and file_name.suffix==".pdf":
+                    content_dict[file_name.name] = self.read__pdf(file_name)
+            
+            for file_name, content in content_dict.items():
+                doc_parts.append(f"Document:{file_name}\n {content}")
+            
+            combined_text = "\n\n".join(doc_parts)
+            self.log.info("Documents combined successfully", count=len(doc_parts))
+            return combined_text
+        except Exception as e:
+            self.log.error(f"Error combining PDFs: {e}")
+            raise DocumentPortalException("An error occurred while combining the PDFs", sys)
+                
     def clean_old_sessions(self):
         """
         Deletes exisiting files at the specified paths
