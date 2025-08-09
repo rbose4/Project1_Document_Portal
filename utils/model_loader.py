@@ -62,7 +62,7 @@ class ModelLoader:
         temperature = llm_config.get("temperature", 0.2)
         max_tokens = llm_config.get("max_tokens", 2048)
         
-        log.info("Loading language model ... ", provider=provider, model_name=model_name, tempature=tempature, max_tokens=max_tokens)
+        log.info("Loading language model ... ", provider=provider, model_name=model_name, temperature=temperature, max_tokens=max_tokens)
         
         if provider == "google":
             llm = ChatGoogleGenerativeAI(
