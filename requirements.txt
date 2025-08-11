@@ -10,4 +10,5 @@ faiss-cpu
 structlog
 pymupdf
 pandas
+pyyaml
 #-e . # to run setup.py
