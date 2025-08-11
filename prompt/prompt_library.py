@@ -16,7 +16,7 @@ Analyze this document:
 document_comparison_prompt = ChatPromptTemplate.from_template("""
 You will be provided with two documents.Your tasks are as follows:
 1. Compare the contents of the two documents.
-2. Indetify the differences in PDF and note down the page number
+2. Indentify the differences in PDF and note down the page number
 3. The output you provide must be page wise comparison content
 4. If any page does not have any changes, you must mention "No Changes" for that page.
 Input documents:
