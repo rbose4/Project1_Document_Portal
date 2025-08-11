@@ -12,15 +12,15 @@ class DocumentIngestion:
     for comparison with session-based versioning.
     """
     
-    def __init__(self, base_dir):
+    def __init__(self, base_dir="data/document_compare"):
         self.log = CustomLogger().get_logger(__name__)
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
     
     def save_uploaded_files(self, reference_file, actual_file):
         try:
-            self.clean_old_sessions()
-            self.log.info("Existing files deleted successfully.")
+            # self.clean_old_sessions()
+            # self.log.info("Existing files deleted successfully.")
             
             # updated version of the file
             ref_path = self.base_dir/reference_file.name
@@ -30,10 +30,10 @@ class DocumentIngestion:
             if not reference_file.name.endswith('.pdf') or not actual_file.name.endswith('.pdf'):
                 raise ValueError("Only PDF files are supported.")
             
-            with fitz.open(ref_path,"wb") as f:
+            with open(ref_path,"wb") as f:
                 f.write(reference_file.getbuffer())
             
-            with fitz.open(act_path,"wb") as f:
+            with open(act_path,"wb") as f:
                 f.write(actual_file.getbuffer())
             
             self.log.info("Files saved successfully.", reference=str(ref_path), actual=str(act_path))
