@@ -25,7 +25,7 @@ class DocumentComparatorLLM:
                 parser=self.parser
             )
             self.prompt = prompt["document_comparison"]
-            self.chain = self.prompt | self.llm | self.parser | self.fixing_parser
+            self.chain = self.prompt | self.llm | self.parser
             self.log.info("DocumentComparatorLLM initialized successfully with model and parser.")
         except Exception as e:
             self.log.error(f"Error initializing DocumentComparatorLLM: {str(e)}")
