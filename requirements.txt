@@ -11,4 +11,7 @@ structlog
 pymupdf
 pandas
 pyyaml
+streamlit
+langchain-core[tracing]
+pytest
 #-e . # to run setup.py
