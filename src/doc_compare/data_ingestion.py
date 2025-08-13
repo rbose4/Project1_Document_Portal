@@ -24,6 +24,9 @@ class DocumentIngestion:
         self.log.info("Document ingestion initialized for Document Compare module with session path: %s", self.session_path)
     
     def save_uploaded_files(self, reference_file, actual_file):
+        """
+        Save reference and actual files in the session folders and returns their paths.
+        """
         try:
             # self.clean_old_sessions()
             # self.log.info("Existing files deleted successfully.")
