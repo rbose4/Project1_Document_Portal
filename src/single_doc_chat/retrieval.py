@@ -20,8 +20,9 @@ class ConversationalRAG:
             self.session_id = session_id
             self.retriever = retriever
             self.llm = self._load_llm()
-            self.contextualize_prompt = PROMPT_REGISTRY[PromptType.CONTEXTUALIZE_QUESTION]
-            self.qa_prompt = PROMPT_REGISTRY[PromptType.CONTEXT_QA]
+            self.contextualize_prompt = PROMPT_REGISTRY[PromptType.CONTEXTUALIZE_QUESTION.value]
+            self.qa_prompt = PROMPT_REGISTRY[PromptType.CONTEXT_QA.value]
+            
             self.history_aware_retriever = create_history_aware_retriever(
                 self.llm,
                 self.retriever,
@@ -41,6 +42,7 @@ class ConversationalRAG:
             self.chain = RunnableWithMessageHistory(self.rag_chain,
                                                     self._get_session_history,
                                                     input_messages_key="input",
+                                                    history_messages_key="chat_history",
                                                     output_messages_key="answer"
             )
             self.log.info("Created a RunnableWithMessageHistory", session_id=session_id)
