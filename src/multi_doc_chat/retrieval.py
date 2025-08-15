@@ -17,6 +17,9 @@ from model.models import PromptType
 
 class ConversationalRAG:
     def __init__(self, session_id:str, retriever=None):
+        """
+        Initializes the ConversationalRAG class with the session id and retriever.
+        """
         try:
             self.log = CustomLogger().get_logger(__name__)
             
@@ -27,6 +30,7 @@ class ConversationalRAG:
             
             if retriever is None:
                 raise ValueError("Retriever cannot be None")
+            self.retriever = retriever
             self._build_lcel_chain()
         except Exception as e:
             self.log.error("Failed to initialize ConversationalRAG", error = str(e))
@@ -49,13 +53,16 @@ class ConversationalRAG:
             self.log.info("FAISS retriever loaded sucessfully from the disk", 
                           index_path = index_path, 
                           session_id = self.session_id)
-            self._build_lcel_chain()
+ 
             return self.retriever
         except Exception as e:
             self.log.error("Failed to load retriever from FAISS", error = str(e))
             raise DocumentPortalException("Loading error while loading FAISS vector DB in ConversationalRAG", sys)
     
     def invoke(self,user_input:str, chat_history: Optional[List[BaseMessage]]=None)->str:
+        """
+        Invoke the ConversationalRAG chain to generate a response.
+        """
         try:
             chat_history = chat_history or []
             payload = {"input":user_input,
@@ -76,6 +83,9 @@ class ConversationalRAG:
             raise DocumentPortalException("Failed to invoke ConversationalRAG", sys)
     
     def _load_llm(self):
+        """
+        Loads the LLM by calling the load_llm() in utils
+        """
         try:
             llm = ModelLoader().load_llm()
             if llm is None:
@@ -91,6 +101,9 @@ class ConversationalRAG:
         return "\n\n".join([d.page_content for d in docs])
     
     def _build_lcel_chain(self):
+        """
+        Creates and return the RAG chain (using LCEL)that will be used to generate answers.
+        """
         try:
             if self.retriever is None:
                 raise DocumentPortalException("Retrieved not loaded to build the LCEL chain", sys)
