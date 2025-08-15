@@ -25,3 +25,5 @@ data/
 # local test files
 test.py
 
+# local vector store
+faiss_index/
