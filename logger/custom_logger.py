@@ -6,7 +6,7 @@ from structlog.processors import CallsiteParameterAdder, CallsiteParameter
 
 
 class CustomLogger:
-    
+    ## Logging without structlog 
     # def __init__(self, log_dir="logs"):
     #     # Ensure logs directory exists
     #     self.logs_dir = os.path.join(os.getcwd(), log_dir)
