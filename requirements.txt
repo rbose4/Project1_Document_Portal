@@ -14,4 +14,5 @@ pyyaml
 streamlit
 langchain-core[tracing]
 pytest
+docx2txt
 #-e . # to run setup.py
