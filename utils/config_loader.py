@@ -18,7 +18,7 @@ def load_config(config_path:str = "config/config.yaml") -> dict:
             config = yaml.safe_load(file)
         return config
     except Exception as e:
-        app_exc = DocumentPortalException(e, sys)
+        app_exc = DocumentPortalException(e, sys) # type: ignore
         logger = CustomLogger().get_logger(__file__)
         logger.error(app_exc)
         raise app_exc
