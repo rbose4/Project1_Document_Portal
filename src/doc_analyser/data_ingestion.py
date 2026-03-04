@@ -26,7 +26,7 @@ class DocumentHandler:
             self.log.info("PDFHandler initialized.", session_id=self.session_id, session_path=self.session_path)
             
         except Exception as e:
-            app_exc = DocumentPortalException(e, sys)
+            app_exc = DocumentPortalException(e, sys.exc_info())
             self.log.error(app_exc)
             raise app_exc
     
@@ -66,7 +66,7 @@ class DocumentHandler:
         try:
             text_chunks = []
             with fitz.open(pdf_path) as doc:
-                for page_num,page in enumerate(doc,start=1):
+                for page_num,page in enumerate(doc,start=1): # type: ignore
                     text_chunks.append(f"\n-- Page {page_num} --\n{page.get_text()}")
             text = ''.join(text_chunks)
             self.log.info("PDF read successfully.", pdf_path=pdf_path, session_id=self.session_id, pages=len(text_chunks))

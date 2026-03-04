@@ -25,7 +25,7 @@ class DocumentAnalyzer:
             self.log.info("DocumentAnalyzer initialized successfully.")
             
         except Exception as e:
-            app_exc = DocumentPortalException(e, sys)
+            app_exc = DocumentPortalException(e, sys) # type: ignore
             self.log.error(app_exc)
             raise app_exc
     def analyze_document(self, document_text: str) -> dict:
