@@ -4,10 +4,10 @@ from logger.custom_logger import CustomLogger
 
 class DocumentPortalException(Exception):
     """Custom exception class that captures the traceback."""
-    def __init__(self, error_message,error_details:sys): # type: ignore
+    def __init__(self, error_message,error_details): 
         _,_,exc_tb = error_details.exc_info()
-        self.filename = exc_tb.tb_frame.f_code.co_filename # type: ignore
-        self.line_number = exc_tb.tb_lineno # type: ignore
+        self.filename = exc_tb.tb_frame.f_code.co_filename 
+        self.line_number = exc_tb.tb_lineno 
         self.error_message = str(error_message)
         self.traceback_str = ''.join(traceback.format_exception(*error_details.exc_info()))
     
