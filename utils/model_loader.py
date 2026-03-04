@@ -6,6 +6,7 @@ from langchain_groq import ChatGroq
 from exception.custom_exception import DocumentPortalException
 from logger.custom_logger import CustomLogger
 from utils.config_loader import load_config
+import asyncio
 
 log = CustomLogger().get_logger(__file__)
 
@@ -28,7 +29,7 @@ class ModelLoader:
         missing_keys = [k for k,v in self.api_keys.items() if not v]
         if missing_keys:
             log.error("Missing required environment variables", missing_keys=missing_keys)
-            raise DocumentPortalException(f"Missing required environment variables:" + "".join(missing_keys), sys)
+            raise DocumentPortalException(f"Missing required environment variables:" + "".join(missing_keys), sys) # type: ignore
         log.info("Environment variables validated", available_keys=[k for k in self.api_keys.keys() if self.api_keys[k]])
         
     def load_embeddings(self):
@@ -38,12 +39,16 @@ class ModelLoader:
         try:
             log.info("Loading embedding model ... ")
             model_name = self.config["embedding_model"]["model_name"]
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                asyncio.set_event_loop(asyncio.new_event_loop())
             embedding_model = GoogleGenerativeAIEmbeddings(model=model_name)
             log.info("Embedding model loaded successfully", model_name=model_name)
             return embedding_model
         except Exception as e:
             log.error("Error while loading embedding model", error=str(e))
-            raise DocumentPortalException(e, sys)
+            raise DocumentPortalException(e, sys) # type: ignore
         
     def load_llm(self):
         """
@@ -54,7 +59,7 @@ class ModelLoader:
         provider_key = os.getenv("LLM_PROVIDER", "groq")
         if provider_key not in llm_block:
             log.error(f"LLM provider not found in configuration.", provider_key = provider_key)
-            raise DocumentPortalException(f"LLM provider {provider_key} not found in configuration", sys)
+            raise DocumentPortalException(f"LLM provider {provider_key} not found in configuration", sys) # type: ignore
         
         llm_config = llm_block[provider_key]
         provider = llm_config.get("provider")
@@ -76,12 +81,12 @@ class ModelLoader:
             llm = ChatGroq(
                 model=model_name,
                 temperature=temperature,
-                api_key=self.api_keys["GROQ_API_KEY"]
+                api_key=self.api_keys["GROQ_API_KEY"] # type: ignore
             )
             return llm
         else:
             log.error(f"Unsupported LLM provider", provider=provider)
-            raise DocumentPortalException(f"Unsupported LLM provider: {provider}", sys)
+            raise DocumentPortalException(f"Unsupported LLM provider: {provider}", sys) # type: ignore
         
     
 if __name__ == "__main__":
