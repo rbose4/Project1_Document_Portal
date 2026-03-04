@@ -15,8 +15,7 @@ class DocumentIngestion:
     
     def __init__(self, base_dir="data/document_compare", session_id = None):
         self.log = CustomLogger().get_logger(__name__)
-        self.base_dir = Path(base_dir) or Path(os.getenv("DATA_COMPARE_STORAGE_PATH",
-                                                    os.getcwd(),"data","document_compare"))
+        self.base_dir = Path(base_dir)
         self.session_id = session_id or f"session_{datetime.utcnow().strftime('%Y-%m-%d-H%M%S')}_{uuid.uuid4().hex[:8]}"
         self.session_path = self.base_dir/ self.session_id
         self.session_path.mkdir(parents=True, exist_ok=True)
@@ -28,8 +27,8 @@ class DocumentIngestion:
         Save reference and actual files in the session folders and returns their paths.
         """
         try:
-            # self.clean_old_sessions()
-            # self.log.info("Existing files deleted successfully.")
+            self.clean_old_sessions()
+            self.log.info("Existing files deleted successfully.")
             
             # updated version of the file
             ref_path = self.session_path/reference_file.name
@@ -62,7 +61,7 @@ class DocumentIngestion:
                 all_text = []
                 for page_num in range(doc.page_count):
                     page = doc.load_page(page_num)
-                    text = page.get_text()
+                    text = page.get_text() # type: ignore
                     if text.strip():
                         all_text.append(f"\n --------- Page {page_num+1} ------ \n {text}")
             self.log.info("PDF read successfully", file=str(pdf_path), pages=len(all_text))
