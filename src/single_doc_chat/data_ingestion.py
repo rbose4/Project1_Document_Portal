@@ -8,6 +8,8 @@ from langchain.vectorstores import FAISS
 from logger.custom_logger import CustomLogger
 from exception.custom_exception import DocumentPortalException
 from utils.model_loader import ModelLoader
+import io
+from typing import List
 
 class SingleDocIngestor:
     def __init__(self,data_dir:str="data/single_doc_chat", faiss_dir:str="faiss_index"):
@@ -34,7 +36,7 @@ class SingleDocIngestor:
             self.log.error("Failed to initialize SingleDOcIngestor", error=str(e))
             raise DocumentPortalException("Failed to initialize SingleDocIngestor", sys)
     
-    def ingest_file(self, uploaded_files):
+    def ingest_file(self, uploaded_files:List[io.BufferedReader]):
         """
         Save the uploaded file to the data directory, load the documents and return the retriever 
         created from the documents. 
@@ -72,7 +74,7 @@ class SingleDocIngestor:
             vector_store = FAISS.from_documents(documents=chunks, 
                                                 embedding=embeddings)
             # Save Faiss index
-            vector_store.save_local(self.faiss_dir)
+            vector_store.save_local(str(self.faiss_dir))
             self.log.info("Faiss index created and saved.", faiss_path=self.faiss_dir)
             
             retriever = vector_store.as_retriever(
