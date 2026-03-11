@@ -99,7 +99,7 @@ class DocumentIngestor:
             
             # Save Faiss index under session folder
             vector_store.save_local(folder_path=str(self.session_faiss_dir))
-            self.log.infor("FAISS index saved to disk", path=str(self.session_faiss_dir), session_id = self.session_id)
+            self.log.info("FAISS index saved to disk", path=str(self.session_faiss_dir), session_id = self.session_id)
             
             # Create retriever from vector store
             retriever = vector_store.as_retriever(search_type="similarity",search_kwargs={"k":5})
