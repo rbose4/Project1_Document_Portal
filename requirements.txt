@@ -1,5 +1,6 @@
 docx2txt==0.9
 faiss-cpu==1.11.0.post1
+fastapi==0.135.1
 ipykernel==6.29.5
 langchain==0.3.27
 langchain_groq==0.3.6
