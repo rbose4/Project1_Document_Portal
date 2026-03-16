@@ -6,6 +6,12 @@ from fastapi.templating import Jinja2Templates
 import os
 from typing import List, Optional, Any, Dict
 from pathlib import Path
+from src.document_ingestion.data_ingestion import (
+    FaissManager, 
+    DocHandler, 
+    DocumentComparator, 
+    ChatIngestor
+    )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
