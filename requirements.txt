@@ -1,5 +1,6 @@
 docx2txt==0.9
 faiss-cpu==1.11.0.post1
+fastapi==0.135.1
 ipykernel==6.29.5
 langchain==0.3.27
 langchain_groq==0.3.6
@@ -9,11 +10,13 @@ langchain_community==0.3.27
 langchain-core[tracing]==0.3.74
 pypdf==5.8.0
 python-dotenv==1.1.1
+python-multipart==0.0.22
 pytest==8.4.1
 pymupdf==1.26.3
 pandas==2.3.1
 pyyaml==6.0.2
 streamlit==1.48.1
 structlog==25.4.0
+uvicorn==0.41.0
 
 #-e . # to run setup.py

@@ -28,7 +28,7 @@ test.py
 # local vector store
 faiss_index/
 
+# archives
+archives
 # temp code files 
-src/multi_doc_chat/data_ingestion_copy.py
-src/multi_doc_chat/retrieval_copy.py
 project_improvement.txt
