@@ -13,15 +13,14 @@ def load_config(config_path:str = "config/config.yaml") -> dict:
     Returns:
         dict: Configuration data as a dictionary.
     """
+    log = CustomLogger().get_logger(__name__)
     try:
         with open(config_path, 'r') as file:
             config = yaml.safe_load(file)
         return config
     except Exception as e:
-        app_exc = DocumentPortalException(e, sys) # type: ignore
-        logger = CustomLogger().get_logger(__file__)
-        logger.error(app_exc)
-        raise app_exc
+       log.error("Failed to load configuration from yaml file", error=str(e))
+       raise DocumentPortalException("Failed to load configuration from yaml file", e) from e
     
 if __name__ == "__main__":
     # Example usage
