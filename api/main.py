@@ -12,6 +12,8 @@ from src.document_ingestion.data_ingestion import (
     DocumentComparator, 
     ChatIngestor
     )
+from src.document_analyzer.data_analysis import DocumentAnalyzer
+from utils.document_ops import FastAPIFileAdapter, read_pdf_via_handler
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -40,7 +42,14 @@ def health() -> Dict[str, str]:
 @app.post("/analyze")
 async def analyze_documents(file:UploadFile=File(...))->Any:
     try:
-        pass
+        dh = DocHandler()
+        # saved_path = dh.save_pdf(FastAPIFileAdapter(file))
+        with FastAPIFileAdapter(file) as adapter:
+            saved_path = dh.save_pdf(adapter)
+        text = read_pdf_via_handler(dh, saved_path)
+        analyzer = DocumentAnalyzer()
+        result = analyzer.analyze_document(document_text=text)
+        return JSONResponse(content=result)
     except HTTPException:
         raise
     except Exception as e:

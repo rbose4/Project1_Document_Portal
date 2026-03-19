@@ -156,6 +156,9 @@
   </footer>
 
   <script>
+    // Base URL for API (same origin when opened via FASTAPI)
+    const API_BASE = "";
+
     // Tab switching
     const tabs = document.querySelectorAll(".tab-btn");
     const panels = document.querySelectorAll(".tab-panel");
@@ -173,14 +176,29 @@
       const file = document.getElementById("an-file").files[0];
       const out = document.getElementById("an-json");
       if (!file) { out.textContent = "Please upload a PDF."; return; }
-      out.textContent = "Running analysis…";
+      try{
+        out.textContent = "Running analysis…";
+        const fd = new FormData();
+        fd.append("file", file);  // <-- must be 'file' to match FastAPI
+
+        const res = await fetch(`${API_BASE}/analyze`, {method:"POST", body:fd})
+        if (!res.ok){
+          const err = await res.json().catch(()=>({detail:res.statusText}));
+          throw new Error(err.detail || `HTTP ${res.status}`);
+        }
+        const json = await res.json();
+        out.textContent = JSON.stringify(json,null,2);
+      }
+      catch(e){
+        out.textContent = "Error: " + (e.message || e)
+      }
       // Example wiring:
       // const fd = new FormData(); fd.append("file", file);
       // const res = await fetch("/analyze", { method: "POST", body: fd });
       // const json = await res.json();
       // out.textContent = JSON.stringify(json, null, 2);
       // For now, mock:
-      setTimeout(()=> { out.textContent = JSON.stringify({Title:"Demo", Summary:["..."]}, null, 2) }, 800);
+      // setTimeout(()=> { out.textContent = JSON.stringify({Title:"Demo", Summary:["..."]}, null, 2) }, 800);
     });
 
     // COMPARE (mock wiring; replace with fetch to /compare)
