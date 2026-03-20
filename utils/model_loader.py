@@ -88,18 +88,18 @@ class ModelLoader:
             log.error(f"Unsupported LLM provider", provider=provider)
             raise DocumentPortalException(f"Unsupported LLM provider: {provider}") # type: ignore
         
+##------------ Standalone test ----------------------------
+# if __name__ == "__main__":
+#     loader = ModelLoader()
     
-if __name__ == "__main__":
-    loader = ModelLoader()
+#     # Test embedding model
+#     embedding_model = loader.load_embeddings()
+#     print(f"Embedding model loaded: {embedding_model}")
+#     embed_vector = embedding_model.embed_query("Test query for embedding model")
+#     print(f"Embedding vector: {len(embed_vector)}")
     
-    # Test embedding model
-    embedding_model = loader.load_embeddings()
-    print(f"Embedding model loaded: {embedding_model}")
-    embed_vector = embedding_model.embed_query("Test query for embedding model")
-    print(f"Embedding vector: {len(embed_vector)}")
-    
-    # Test LLM model
-    llm_model = loader.load_llm()
-    print(f"LLM model loaded: {llm_model}")
-    response = llm_model.invoke("What is the capital of France?")
-    print(f"LLM response: {response.content}")
+#     # Test LLM model
+#     llm_model = loader.load_llm()
+#     print(f"LLM model loaded: {llm_model}")
+#     response = llm_model.invoke("What is the capital of France?")
+#     print(f"LLM response: {response.content}")

@@ -206,8 +206,36 @@
       const ref = document.getElementById("cmp-ref").files[0];
       const act = document.getElementById("cmp-act").files[0];
       const tbody = document.querySelector("#cmp-table tbody");
-      if (!ref || !act) { tbody.innerHTML = `<tr><td colspan="2" class="muted center">Upload both PDFs.</td></tr>`; return; }
+      if (!ref || !act) { 
+        tbody.innerHTML = `<tr><td colspan="2" class="muted center">Upload both PDFs.</td></tr>`; 
+        return; 
+      }
+      try {
       tbody.innerHTML = `<tr><td colspan="2" class="center">Comparing…</td></tr>`;
+      const fd = new FormData()
+      fd.append("reference",ref) //<-- must be 'reference' to match fastAPI
+      fd.append("actual",act) //<-- must be 'actual' to match fastAPI
+
+      const res = await fetch(`${API_BASE}/compare`,{method: "POST", body:fd})
+      if (!res.ok){
+        const err = await res.json().catch(()=>({detail:res.statusText}))
+        throw new Error(err.detail || `HTTP ${res.status}`)
+      }
+      const json = await res.json(); // { rows: [...] }
+      const rows = json.rows || [];
+      if (!rows.length){
+        tbody.innerHTML = `<tr><td colspan="2" class="muted center">No differences found.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r => {
+        const page = r.Page ?? r.page ?? "";
+        const chg  = r.Changes ?? r.changes ?? "";
+        return `<tr><td>${page}</td><td>${chg}</td></tr>`;
+      }).join("");
+      }
+      catch(e){
+        tbody.innerHTML=`<tr><td colspan="2" class="muted center">Error: ${e.message}</td></tr>`
+      }
       // Example wiring:
       // const fd = new FormData(); fd.append("reference", ref); fd.append("actual", act);
       // const res = await fetch("/compare", { method: "POST", body: fd });
@@ -215,10 +243,11 @@
       // render rows:
       // tbody.innerHTML = json.rows.map(r=>`<tr><td>${r.Page ?? ""}</td><td>${r.Changes ?? ""}</td></tr>`).join("");
       // For now, mock:
-      setTimeout(()=>{
-        const rows = [{Page:1, Changes:"NO CHANGE"}, {Page:2, Changes:"Updated section 2.1"}];
-        tbody.innerHTML = rows.map(r=>`<tr><td>${r.Page}</td><td>${r.Changes}</td></tr>`).join("");
-      }, 800);
+      // setTimeout(()=>{
+      //   const rows = [{Page:1, Changes:"NO CHANGE"}, {Page:2, Changes:"Updated section 2.1"}];
+      //   tbody.innerHTML = rows.map(r=>`<tr><td>${r.Page}</td><td>${r.Changes}</td></tr>`).join("");
+      // }, 800);
+      
     });
 
     // CHAT build (mock wiring; replace with fetch to /chat/index)
