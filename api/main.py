@@ -13,6 +13,7 @@ from src.document_ingestion.data_ingestion import (
     ChatIngestor
     )
 from src.document_analyzer.data_analysis import DocumentAnalyzer
+from src.document_compare.document_comparator import DocumentComparatorLLM
 from utils.document_ops import FastAPIFileAdapter, read_pdf_via_handler
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,6 +40,7 @@ async def serve_ui(request: Request):
 def health() -> Dict[str, str]:
     return {"status":"ok", "service":"document-portal"}
 
+# ---------------- Document Analyze --------------------
 @app.post("/analyze")
 async def analyze_documents(file:UploadFile=File(...))->Any:
     try:
@@ -55,10 +57,19 @@ async def analyze_documents(file:UploadFile=File(...))->Any:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {e}")
 
+# ---------------- Document Compare --------------------
 @app.post("/compare")
-async def compare_documents(referece:UploadFile=File(...),actual:UploadFile=File(...)) -> Any:
+async def compare_documents(reference:UploadFile=File(...),actual:UploadFile=File(...)) -> Any:
     try:
-        pass
+        dc = DocumentComparator()
+        with FastAPIFileAdapter(reference) as ref_adapter,\
+            FastAPIFileAdapter(actual) as act_adapter:
+                _ = dc.save_uploaded_files(ref_adapter, act_adapter)
+        
+        combined_text = dc.combine_documents()
+        compLLM = DocumentComparatorLLM()
+        df = compLLM.compare_documents(combined_docs=combined_text)
+        return {"rows":df.to_dict(orient="records"),"session_id":dc.session_id}
     except HTTPException:
         raise
     except Exception as e:
