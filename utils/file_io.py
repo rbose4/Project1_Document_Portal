@@ -29,7 +29,7 @@ def generate_session_id(prefix:str = "session")-> str:
     est = ZoneInfo("America/New_York")
     return f"{prefix}_{datetime.now(est).strftime('%m%d%Y_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
-def save_uploaded_files(uploaded_files:Iterable, target_dir:Path):
+def save_uploaded_files(uploaded_files:Iterable, target_dir:Path) ->list[Path]:
     """Persist uploaded file-like objects to `target_dir`.
 
     This function will:
@@ -75,7 +75,7 @@ def save_uploaded_files(uploaded_files:Iterable, target_dir:Path):
                     f.write(uf.getbuffer()) # for fallback
             saved.append(out)
             log.info("File saved for ingestion", uploaded_file=name,saved_as=str(out))
-            return saved
+        return saved
     except Exception as e:
         log.error("Failed to save uploaded files", error=str(e), directory=str(target_dir))
         raise DocumentPortalException("Failed to save uploaded files", e) from e
