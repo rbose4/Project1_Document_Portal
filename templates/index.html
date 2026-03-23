@@ -126,6 +126,7 @@
           <div class="actions">
             <button id="btn-build" class="btn primary">Build / Update Index</button>
           </div>
+          <div id="chat-meta" class="muted small"></div>
         </form>
 
         <div class="divider"></div>
@@ -140,7 +141,7 @@
           </div>
         </form>
 
-        <div id="chat-meta" class="muted small"></div>
+        <!-- <div id="chat-meta" class="muted small"></div> -->
 
         <div id="chat-ans" class="result-block">
           <h3>Answer</h3>
@@ -152,7 +153,7 @@
 
   <footer class="app-footer">
     <div>© Document Portal • Demo UI</div>
-    <div class="tiny">Frontend only – hook to your FastAPI later.</div>
+    <!-- <div class="tiny">Frontend only – hook to your FastAPI later.</div> -->
   </footer>
 
   <script>
@@ -249,7 +250,7 @@
       // }, 800);
       
     });
-
+    // ============= CHAT INDEX ====================
     // CHAT build (mock wiring; replace with fetch to /chat/index)
     let currentSession = null;
     document.getElementById("btn-build").addEventListener("click", async () => {
@@ -260,8 +261,34 @@
       const chunk = +document.getElementById("chat-chunk").value || 1000;
       const overlap = +document.getElementById("chat-overlap").value || 200;
       const meta = document.getElementById("chat-meta");
+
       if (!files.length) { meta.textContent = "Please upload at least one file."; return; }
-      meta.textContent = "Building index…";
+
+      try{
+        meta.textContent = "Building index…";
+
+        const fd = new FormData();
+        [...files].forEach(f=> fd.append("files", f));  // <-- must be 'files' to match Fastapi
+        if(sessionId) fd.append("session_id", sessionId);
+
+        fd.append("use_session_dirs", useSession ? "true":"false");
+        fd.append("chunk_size",String(chunk));
+        fd.append("chunk_overlap",String(overlap));
+        fd.append("k",String(k));
+
+        const res = await fetch(`${API_BASE}/chat/index`, {method:"POST",body:fd});
+        if (!res.ok){
+          const err = await res.json().catch(()=>({detail:res.statusText}));
+          throw new Error(err.detail || `HTTP ${res.status}`);
+        }
+
+        const json = await res.json(); // {session_id, k, use_session_dirs}
+        currentSession = json.session_id || sessionId || null;
+        meta.textContent = `Indexed. session =${currentSession || "(none)"}, k=${json.k}`
+      } catch (e){
+        meta.textContent = "Indexing failed: " + (e.message || e)
+      }
+      
       // Example wiring:
       // const fd = new FormData();
       // [...files].forEach(f => fd.append("files", f));
@@ -272,7 +299,7 @@
       // const json = await res.json();
       // currentSession = json.session_id; meta.textContent = `Indexed. session=${currentSession}`;
       // For mock:
-      setTimeout(()=> { currentSession = sessionId || "session_demo_1234"; meta.textContent = `Indexed (mock). session=${currentSession}`; }, 800);
+      // setTimeout(()=> { currentSession = sessionId || "session_demo_1234"; meta.textContent = `Indexed (mock). session=${currentSession}`; }, 800);
     });
 
     // CHAT ask (mock wiring; replace with fetch to /chat/query)
