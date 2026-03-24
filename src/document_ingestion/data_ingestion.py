@@ -17,7 +17,7 @@ from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, Te
 from langchain_community.vectorstores import FAISS
 
 from utils.model_loader import ModelLoader
-from logger.custom_logger import CustomLogger
+from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import DocumentPortalException
 from utils.file_io import generate_session_id, save_uploaded_files
 from utils.document_ops import load_documents
@@ -192,14 +192,13 @@ class DocHandler:
             session_id (Optional[str]): Optional session identifier. A new
                 id is generated when not provided.
         """
-        self.log = CustomLogger().get_logger(__name__)
 
         self.data_dir = Path( data_dir or os.getenv("DATA_STORAGE_PATH",Path.cwd() / "data"/"document_analysis"))
         self.session_id = session_id or generate_session_id()
         self.session_path = Path(self.data_dir) / self.session_id  #type:ignore
 
         self.session_path.mkdir(parents=True, exist_ok=True)
-        self.log.info("DocHandler initialized", session_id = self.session_id, session_path = self.session_path)
+        log.info("DocHandler initialized", session_id = self.session_id, session_path = self.session_path)
         
     def save_pdf(self, uploaded_file) -> str:
         """Save an uploaded PDF to the session directory.
@@ -226,10 +225,10 @@ class DocHandler:
                     f.write(uploaded_file.read())
                 else:
                     f.write(uploaded_file.getbuffer())
-            self.log.info("PDF saved successfully.", filename=filename, save_path=save_path, session_id=self.session_id)
+            log.info("PDF saved successfully.", filename=filename, save_path=save_path, session_id=self.session_id)
             return save_path
         except Exception as e:
-            self.log.error("Failed to save PDF", error=str(e), session_id=self.session_id)
+            log.error("Failed to save PDF", error=str(e), session_id=self.session_id)
             raise DocumentPortalException(f"Failed to save PDF: {str(e)}", e) from e    
     
     def read_pdf(self, pdf_path:str) -> str:
@@ -248,11 +247,11 @@ class DocHandler:
                 for page_num,page in enumerate(doc,start=1): # type: ignore
                     text_chunks.append(f"\n-- Page {page_num} --\n{page.get_text()}")
             text = ''.join(text_chunks)
-            self.log.info("PDF read successfully.", pdf_path=pdf_path, session_id=self.session_id, pages=len(text_chunks))
+            log.info("PDF read successfully.", pdf_path=pdf_path, session_id=self.session_id, pages=len(text_chunks))
             return text
 
         except Exception as e:
-            self.log.error("Failed to read PDF", error=str(e), pdf_path=pdf_path, session_id=self.session_id)
+            log.error("Failed to read PDF", error=str(e), pdf_path=pdf_path, session_id=self.session_id)
             raise DocumentPortalException(f"Couldn't read PDF file from path: {pdf_path}", e) from e
 
 
@@ -265,13 +264,12 @@ class DocumentComparator:
     """
     
     def __init__(self, base_dir="data/document_compare", session_id = None):
-        self.log = CustomLogger().get_logger(__name__)
         self.base_dir = Path(base_dir)
         self.session_id = session_id or generate_session_id()
         self.session_path = self.base_dir/ self.session_id
         self.session_path.mkdir(parents=True, exist_ok=True)
         
-        self.log.info("DocumentComparator initialized", session_path=str(self.session_path))
+        log.info("DocumentComparator initialized", session_path=str(self.session_path))
     
     def save_uploaded_files(self, reference_file, actual_file):
         """Persist a reference and an actual PDF to the session folder.
@@ -292,7 +290,7 @@ class DocumentComparator:
         """
         try:
             self.clean_old_sessions()
-            self.log.info("Existing files deleted successfully.")
+            log.info("Existing files deleted successfully.")
             
             # updated version of the file
             ref_path = self.session_path/reference_file.name
@@ -308,10 +306,10 @@ class DocumentComparator:
                     else:
                         f.write(fobj.getbuffer())
             
-            self.log.info("Files saved successfully.", reference_path=str(ref_path), actual_path=str(act_path))
+            log.info("Files saved successfully.", reference_path=str(ref_path), actual_path=str(act_path))
             return ref_path, act_path
         except Exception as e:
-            self.log.error(f"Error saving uploaded files", error=str(e), session_id=self.session_id)
+            log.error(f"Error saving uploaded files", error=str(e), session_id=self.session_id)
             raise DocumentPortalException("An error occurred while saving the uploaded files",e) from e
     
     def read__pdf(self,pdf_path:Path) -> str:
@@ -337,10 +335,10 @@ class DocumentComparator:
                     text = page.get_text() # type: ignore
                     if text.strip():
                         all_text.append(f"\n --------- Page {page_num+1} ------ \n {text}")
-            self.log.info("PDF read successfully", file=str(pdf_path), pages=len(all_text))
+            log.info("PDF read successfully", file=str(pdf_path), pages=len(all_text))
             return "\n".join(all_text)
         except Exception as e:
-            self.log.error(f"Error reading PDF",error=str(e), file_path=str(pdf_path))
+            log.error(f"Error reading PDF",error=str(e), file_path=str(pdf_path))
             raise DocumentPortalException("An error occured while reading the PDF", e) from e
     
     def combine_documents(self) -> str:
@@ -365,10 +363,10 @@ class DocumentComparator:
                     doc_parts.append(f"Document:{file}\n {content}")
             
             combined_text = "\n\n".join(doc_parts)
-            self.log.info("Documents combined successfully", count=len(doc_parts), session=self.session_id)
+            log.info("Documents combined successfully", count=len(doc_parts), session=self.session_id)
             return combined_text
         except Exception as e:
-            self.log.error(f"Error combining documents", error=str(e), session = self.session_id)
+            log.error(f"Error combining documents", error=str(e), session = self.session_id)
             raise DocumentPortalException("An error occurred while combining the documents", e) from e
     
     def clean_old_sessions(self, keep_latest:int=3):
@@ -382,10 +380,10 @@ class DocumentComparator:
                 session_folders = sorted([f for f in self.base_dir.iterdir() if f.is_dir()],reverse=True)
                 for folder in session_folders[keep_latest:]:
                     shutil.rmtree(folder,ignore_errors=True)
-                    self.log.info("Old sessions deleted", path=str(folder))
+                    log.info("Old sessions deleted", path=str(folder))
                     
         except Exception as e:
-            self.log.error(f"Error deleting old sessions", error=str(e))
+            log.error(f"Error deleting old sessions", error=str(e))
             raise DocumentPortalException("An error occurred while cleaning old sessions", e) from e
 
 class ChatIngestor:
@@ -417,7 +415,6 @@ class ChatIngestor:
                 omitted a new session id is generated.
         """
         try:
-            self.log = CustomLogger().get_logger(__name__)
             self.model_loader = ModelLoader()
             
             self.use_session = use_session_dirs
@@ -432,13 +429,13 @@ class ChatIngestor:
             self.temp_dir = self._resolve_dir(self.temp_base)
             self.faiss_dir = self._resolve_dir(self.faiss_base)
                         
-            self.log.info("ChatIngestor intialized",
+            log.info("ChatIngestor intialized",
                           session_id=self.session_id,
                           temp_dir=str(self.temp_dir),
                           faiss_dir=str(self.faiss_dir),
                           sessionized=self.use_session)
         except Exception as e:
-            self.log.error("Failed to initialize ChatIngestor", error=str(e))
+            log.error("Failed to initialize ChatIngestor", error=str(e))
             raise DocumentPortalException("Error while initializing ChatIngestor", e) from e
     
     def _resolve_dir(self, base:Path):
@@ -477,10 +474,10 @@ class ChatIngestor:
         try:
             splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
             chunks = splitter.split_documents(documents=docs)
-            self.log.info("Documents splitted to chunks", chunks=len(chunks), chunk_size=chunk_size,chunk_overlap=chunk_overlap)
+            log.info("Documents splitted to chunks", chunks=len(chunks), chunk_size=chunk_size,chunk_overlap=chunk_overlap)
             return chunks
         except Exception as e:
-            self.log.error("Failed to split documents into chunks", error=str(e))
+            log.error("Failed to split documents into chunks", error=str(e))
             raise DocumentPortalException("Failed to split documents into chunks", e) from e
     
     def build_retriever(self, 
@@ -530,7 +527,7 @@ class ChatIngestor:
 
             added = fm._add_document(chunks)
         except Exception as e:
-            self.log.error("Failed to build retriever", error=str(e))
+            log.error("Failed to build retriever", error=str(e))
             raise DocumentPortalException("Failed to build retriever", e) from e
     
     def _delete_fiass_index(self):
@@ -547,7 +544,7 @@ class ChatIngestor:
 
             try:
                 file_path.unlink(missing_ok=True)
-                self.log.info(f"File deleted",file_path=file_path)
+                log.info(f"File deleted",file_path=file_path)
             except Exception as e:
-                self.log.error(f"Failed to delete file", filename=filename, file_path=file_path)
+                log.error(f"Failed to delete file", filename=filename, file_path=file_path)
                 raise DocumentPortalException("Failed to delete file", e) from e
