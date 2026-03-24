@@ -15,11 +15,13 @@ from src.document_ingestion.data_ingestion import (
     )
 from src.document_analyzer.data_analysis import DocumentAnalyzer
 from src.document_compare.document_comparator import DocumentComparatorLLM
+from src.document_chat.retrieval import ConversationalRAG
 from utils.document_ops import FastAPIFileAdapter, read_pdf_via_handler
 from logger import GLOBAL_LOGGER as log
 
 FAISS_BASE = os.getenv("FAISS_BASE","faiss_index")
 UPLOAD_BASE = os.getenv("UPLOAD_BASE","data")
+FAISS_INDEX_NAME = os.getenv("FAISS_INDEX_NAME", "index")  # <--- keep consistent with save_local()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 app = FastAPI(title="Document Portal API", version="0.1")
@@ -108,11 +110,35 @@ async def chat_build_index(files:list[UploadFile]=File(...),
         raise HTTPException(status_code=500, detail=f"Indexingfailed: {e}")    
     
     
-
 @app.post("/chat/query")
-async def chat_query():
+async def chat_query(
+    question:str=Form(...),
+    session_id:Optional[str]=Form(None),
+    use_session_dirs:bool=Form(True),
+    k:int=Form(5)
+    )->Any:
     try:
-        pass
+        log.info(f"Received chat query: '{question}' | session:{session_id}")
+        if use_session_dirs and not session_id:
+            raise HTTPException(status_code=400, detail="Session_id is required when use_session_dirs=True")
+        
+        index_dir = Path(FAISS_BASE) / str(session_id) if use_session_dirs else Path(FAISS_BASE)
+        
+        if not index_dir.exists or not index_dir.is_dir():
+            raise HTTPException(status_code=404, detail=f"FAISS index not found at: {index_dir}")
+        
+        rag = ConversationalRAG(session_id=session_id)
+        # Build retriever and RAG chain
+        rag.load_retriever_from_faiss(index_path=str(index_dir), k=k,index_name=FAISS_INDEX_NAME)
+        response = rag.invoke(user_input=question,chat_history=[])
+        log.info("Chat query handled successfully")
+        
+        return {
+            "answer": response,
+            "session_id":session_id,
+            "k":k,
+            "engine":"LCEL-RAG"
+        }
     except HTTPException:
         raise
     except Exception as e:

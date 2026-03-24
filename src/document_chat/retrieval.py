@@ -123,7 +123,7 @@ class ConversationalRAG:
                 raise DocumentPortalException("Retriever is not set to build the chain")
             
             # 1. Rewrite user question with chat history context
-            question_rewriter = ({"input":itemgetter("input"),"chat_history":itemgetter("chat_hisotry")}
+            question_rewriter = ({"input":itemgetter("input"),"chat_history":itemgetter("chat_history")}
                                  | self.contextualize_prompt
                                  | self.llm
                                  |StrOutputParser())
