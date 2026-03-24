@@ -28,7 +28,7 @@ class CustomLogger:
     
     def __init__(self, log_dir="logs"):
         #Ensure logs directory exists
-        self.logs_dir = os.path.join(os.getcwd(), log_dir)
+        self.logs_dir = os.path.join(os.getcwd(),log_dir)
         os.makedirs(self.logs_dir, exist_ok=True)
         
         log_file = f"{datetime.now().strftime('%m_%d_%Y_%H-%M-%S')}.log"
