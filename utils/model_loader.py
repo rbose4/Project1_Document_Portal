@@ -4,11 +4,10 @@ import sys
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from exception.custom_exception import DocumentPortalException
-from logger.custom_logger import CustomLogger
+from logger import GLOBAL_LOGGER as log
 from utils.config_loader import load_config
 import asyncio
 
-log = CustomLogger().get_logger(__name__)
 
 class ModelLoader:
     """

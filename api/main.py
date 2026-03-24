@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 import os
 from typing import List, Optional, Any, Dict
 from pathlib import Path
+from contextlib import ExitStack
 from src.document_ingestion.data_ingestion import (
     FaissManager, 
     DocHandler, 
@@ -14,8 +15,13 @@ from src.document_ingestion.data_ingestion import (
     )
 from src.document_analyzer.data_analysis import DocumentAnalyzer
 from src.document_compare.document_comparator import DocumentComparatorLLM
+from src.document_chat.retrieval import ConversationalRAG
 from utils.document_ops import FastAPIFileAdapter, read_pdf_via_handler
+from logger import GLOBAL_LOGGER as log
 
+FAISS_BASE = os.getenv("FAISS_BASE","faiss_index")
+UPLOAD_BASE = os.getenv("UPLOAD_BASE","data")
+FAISS_INDEX_NAME = os.getenv("FAISS_INDEX_NAME", "index")  # <--- keep consistent with save_local()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 app = FastAPI(title="Document Portal API", version="0.1")
@@ -34,16 +40,21 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui(request: Request):
-    return templates.TemplateResponse("index.html",{"request":request})
+    log.info("Serving UI homepage")
+    resp = templates.TemplateResponse("index.html",{"request":request})
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 @app.get("/health")
 def health() -> Dict[str, str]:
+    log.info("Health check passed")
     return {"status":"ok", "service":"document-portal"}
 
 # ---------------- Document Analyze --------------------
 @app.post("/analyze")
 async def analyze_documents(file:UploadFile=File(...))->Any:
     try:
+        log.info(f"Received file for analysis:{file.filename}")
         dh = DocHandler()
         # saved_path = dh.save_pdf(FastAPIFileAdapter(file))
         with FastAPIFileAdapter(file) as adapter:
@@ -51,16 +62,19 @@ async def analyze_documents(file:UploadFile=File(...))->Any:
         text = read_pdf_via_handler(dh, saved_path)
         analyzer = DocumentAnalyzer()
         result = analyzer.analyze_document(document_text=text)
+        log.info("Document analysis complete.")
         return JSONResponse(content=result)
     except HTTPException:
         raise
     except Exception as e:
+        log.exception("Error during document analysis")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {e}")
 
 # ---------------- Document Compare --------------------
 @app.post("/compare")
 async def compare_documents(reference:UploadFile=File(...),actual:UploadFile=File(...)) -> Any:
     try:
+        log.info(f"Comparing files: {reference.filename} vs {actual.filename}")
         dc = DocumentComparator()
         with FastAPIFileAdapter(reference) as ref_adapter,\
             FastAPIFileAdapter(actual) as act_adapter:
@@ -69,28 +83,72 @@ async def compare_documents(reference:UploadFile=File(...),actual:UploadFile=Fil
         combined_text = dc.combine_documents()
         compLLM = DocumentComparatorLLM()
         df = compLLM.compare_documents(combined_docs=combined_text)
+        log.info("Document comparison completed.")
         return {"rows":df.to_dict(orient="records"),"session_id":dc.session_id}
     except HTTPException:
         raise
     except Exception as e:
+        log.exception("Document comparison failed")
         raise HTTPException(status_code=500, detail=f"Comparison failed: {e}")
     
     
 @app.post("/chat/index")
-async def chat_build_index()->Any:
+async def chat_build_index(files:list[UploadFile]=File(...),
+                           session_id:Optional[str]=Form(None),
+                           use_session_dirs:bool=Form(True),
+                           chunk_size:int=Form(1000),
+                           chunk_overlap:int=Form(200),
+                           k:int=Form(5),
+                           )->Any:
     try:
-        pass
+        log.info(f"Indexing chat session, Session ID:{session_id}, Files:{[f.filename for f in files]}")
+        with ExitStack() as stack:
+            wrapped = [stack.enter_context(FastAPIFileAdapter(f)) for f in files]
+            # ChatIngestor class is responsible for storing data into VectorDB
+            ci = ChatIngestor(temp_base=UPLOAD_BASE,
+                              faiss_base=FAISS_BASE,
+                              use_session_dirs=use_session_dirs,
+                              session_id=session_id or None)
+            ci.build_retriever(wrapped, chunk_size=chunk_size, chunk_overlap=chunk_overlap,k=k)
+            
+        log.info(f"Index created successfullt for session:{ci.session_id}")
+        return{"session_id":ci.session_id,"k":k,"use_session_dirs":use_session_dirs}
     except HTTPException:
         raise
     except Exception as e:
+        log.exception("Building chat index failed")
         raise HTTPException(status_code=500, detail=f"Indexingfailed: {e}")    
     
     
-
 @app.post("/chat/query")
-async def chat_query():
+async def chat_query(
+    question:str=Form(...),
+    session_id:Optional[str]=Form(None),
+    use_session_dirs:bool=Form(True),
+    k:int=Form(5)
+    )->Any:
     try:
-        pass
+        log.info(f"Received chat query: '{question}' | session:{session_id}")
+        if use_session_dirs and not session_id:
+            raise HTTPException(status_code=400, detail="Session_id is required when use_session_dirs=True")
+        
+        index_dir = Path(FAISS_BASE) / str(session_id) if use_session_dirs else Path(FAISS_BASE)
+        
+        if not index_dir.exists or not index_dir.is_dir():
+            raise HTTPException(status_code=404, detail=f"FAISS index not found at: {index_dir}")
+        
+        rag = ConversationalRAG(session_id=session_id)
+        # Build retriever and RAG chain
+        rag.load_retriever_from_faiss(index_path=str(index_dir), k=k,index_name=FAISS_INDEX_NAME)
+        response = rag.invoke(user_input=question,chat_history=[])
+        log.info("Chat query handled successfully")
+        
+        return {
+            "answer": response,
+            "session_id":session_id,
+            "k":k,
+            "engine":"LCEL-RAG"
+        }
     except HTTPException:
         raise
     except Exception as e:
