@@ -6,9 +6,8 @@ from pathlib import Path
 from langchain.schema import Document
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from exception.custom_exception import DocumentPortalException
-from logger.custom_logger import CustomLogger
+from logger import GLOBAL_LOGGER as log
 
-log = CustomLogger().get_logger(__name__)
 SUPPORTED_EXTENSIONS = {".pdf",".docx",".txt"}
 
 class FastAPIFileAdapter:

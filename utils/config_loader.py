@@ -1,5 +1,5 @@
 import yaml
-from logger.custom_logger import CustomLogger
+from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import DocumentPortalException
 import sys
 
@@ -13,7 +13,6 @@ def load_config(config_path:str = "config/config.yaml") -> dict:
     Returns:
         dict: Configuration data as a dictionary.
     """
-    log = CustomLogger().get_logger(__name__)
     try:
         with open(config_path, 'r') as file:
             config = yaml.safe_load(file)
