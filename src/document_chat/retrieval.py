@@ -17,6 +17,13 @@ from prompt.prompt_library import PROMPT_REGISTRY
 from model.models import PromptType
 
 class ConversationalRAG:
+    """Conversational RAG (Retrieval-Augmented Generation) helper.
+
+    Wraps an LLM and a retriever to provide history-aware question
+    rewriting, document retrieval and answer generation in a single
+    runnable chain.
+    """
+
     def __init__(self, session_id:Optional[str],retriever = None) -> None:
         try:
             self.session_id = session_id
@@ -45,6 +52,25 @@ class ConversationalRAG:
                                   index_name:str="index",
                                   search_type:str="similarity",
                                   search_kwargs:Optional[Dict[str,Any]]=None):
+        """Load a FAISS index from disk and build a retriever.
+
+        Args:
+            index_path (str): Filesystem directory containing the FAISS
+                index files.
+            k (int): Default number of neighbors to return when searching.
+            index_name (str): Name of the index file (used by FAISS loader).
+            search_type (str): Retrieval strategy (e.g. 'similarity').
+            search_kwargs (Optional[Dict[str,Any]]): Additional kwargs
+                forwarded to the retriever's search function. If omitted
+                a `{"k": k}` dictionary is used.
+
+        Returns:
+            The created `Retriever` instance attached to this object.
+
+        Raises:
+            DocumentPortalException: On any failure to load or initialize
+                the FAISS retriever.
+        """
         try:
             if not Path(index_path).exists():
                 raise FileNotFoundError(f"Path doesnot exists: {index_path}")
@@ -82,6 +108,20 @@ class ConversationalRAG:
     
     
     def invoke(self, user_input:str, chat_history:Optional[list[BaseMessage]]=None) -> str:
+        """Invoke the RAG chain with the provided user input.
+
+        Args:
+            user_input (str): The user's question or prompt.
+            chat_history (Optional[list[BaseMessage]]): Conversation history
+                used to contextualize the question rewrite and answer.
+
+        Returns:
+            str: The generated answer text.
+
+        Raises:
+            DocumentPortalException: If the chain is not initialized or
+                if invocation fails.
+        """
         try:
             if self.chain is None:
                 raise DocumentPortalException(
@@ -107,6 +147,14 @@ class ConversationalRAG:
             
     #--------------- Internal Methods -----------------
     def _load_llm(self):
+        """Load and return the configured language model.
+
+        Returns:
+            The loaded LLM instance from `ModelLoader`.
+
+        Raises:
+            DocumentPortalException: If the LLM cannot be loaded.
+        """
         try:
             llm = ModelLoader().load_llm()
             if not llm:
@@ -118,6 +166,18 @@ class ConversationalRAG:
             raise DocumentPortalException("Error while loading LLM in ConversationalRAG", e) from e
     
     def _build_lcel_chain(self):
+        """Construct the LCEL runnable graph used for question rewriting,
+        retrieval and answer generation.
+
+        This builds a small pipeline that:
+        1. Rewrites the user question using chat history.
+        2. Retrieves documents for the rewritten question.
+        3. Runs the QA prompt over retrieved context and returns text.
+
+        Raises:
+            DocumentPortalException: If the retriever is not set or the
+                graph construction fails.
+        """
         try:
             if self.retriever is None:
                 raise DocumentPortalException("Retriever is not set to build the chain")
@@ -149,4 +209,10 @@ class ConversationalRAG:
     
     @staticmethod
     def _format_docs(docs:list[Document]):
+        """Format a list of `Document` objects into a single string.
+
+        Returns a simple concatenation of `page_content` values separated
+        by a visual delimiter. Used as a small formatting helper in the
+        retrieval pipeline.
+        """
         return "/n/n".join(doc.page_content for doc in docs)
