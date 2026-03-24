@@ -40,16 +40,21 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui(request: Request):
-    return templates.TemplateResponse("index.html",{"request":request})
+    log.info("Serving UI homepage")
+    resp = templates.TemplateResponse("index.html",{"request":request})
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 @app.get("/health")
 def health() -> Dict[str, str]:
+    log.info("Health check passed")
     return {"status":"ok", "service":"document-portal"}
 
 # ---------------- Document Analyze --------------------
 @app.post("/analyze")
 async def analyze_documents(file:UploadFile=File(...))->Any:
     try:
+        log.info(f"Received file for analysis:{file.filename}")
         dh = DocHandler()
         # saved_path = dh.save_pdf(FastAPIFileAdapter(file))
         with FastAPIFileAdapter(file) as adapter:
@@ -57,16 +62,19 @@ async def analyze_documents(file:UploadFile=File(...))->Any:
         text = read_pdf_via_handler(dh, saved_path)
         analyzer = DocumentAnalyzer()
         result = analyzer.analyze_document(document_text=text)
+        log.info("Document analysis complete.")
         return JSONResponse(content=result)
     except HTTPException:
         raise
     except Exception as e:
+        log.exception("Error during document analysis")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {e}")
 
 # ---------------- Document Compare --------------------
 @app.post("/compare")
 async def compare_documents(reference:UploadFile=File(...),actual:UploadFile=File(...)) -> Any:
     try:
+        log.info(f"Comparing files: {reference.filename} vs {actual.filename}")
         dc = DocumentComparator()
         with FastAPIFileAdapter(reference) as ref_adapter,\
             FastAPIFileAdapter(actual) as act_adapter:
@@ -75,10 +83,12 @@ async def compare_documents(reference:UploadFile=File(...),actual:UploadFile=Fil
         combined_text = dc.combine_documents()
         compLLM = DocumentComparatorLLM()
         df = compLLM.compare_documents(combined_docs=combined_text)
+        log.info("Document comparison completed.")
         return {"rows":df.to_dict(orient="records"),"session_id":dc.session_id}
     except HTTPException:
         raise
     except Exception as e:
+        log.exception("Document comparison failed")
         raise HTTPException(status_code=500, detail=f"Comparison failed: {e}")
     
     
