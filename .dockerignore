@@ -30,3 +30,6 @@ archives/
 faiss_index/
 .vscode/
 .github/
+Project1_Document_portal.egg-info/
+project_improvement.txt
+notebook/
