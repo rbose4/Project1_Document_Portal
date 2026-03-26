@@ -1,0 +1,32 @@
+# Git metadata (No need for history inside the container)
+.git
+.gitignore
+
+# Python bytecode and cache (Slows down builds and adds bulk)
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Environment variables (SECURITY: Never copy secrets into your image!)
+# .env
+
+# Docker-specific files
+Dockerfile
+.dockerignore
+
+# OS-specific junk
+.DS_Store
+Thumbs.db
+
+# Large data files or local notebooks (if applicable)
+*.ipynb
+data/
+logs/
+archives/
+faiss_index/
+.vscode/
+.github/
