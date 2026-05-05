@@ -2,9 +2,9 @@ name: CI/CD to ECS Fargate
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 env:
   AWS_REGION: us-east-2
