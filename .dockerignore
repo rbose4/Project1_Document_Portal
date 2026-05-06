@@ -12,7 +12,7 @@ venv/
 env/
 
 # Environment variables (SECURITY: Never copy secrets into your image!)
-# .env
+.env
 
 # Docker-specific files
 Dockerfile
