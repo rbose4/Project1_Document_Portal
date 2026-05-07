@@ -31,4 +31,8 @@ faiss_index/
 # archives
 archives
 # temp code files 
+
+# Notes related to projects
 project_improvement.txt
+incline_policy.json
+instruction_for_deployment.txt

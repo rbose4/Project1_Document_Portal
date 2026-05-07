@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 import sys
+import json
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from exception.custom_exception import DocumentPortalException
@@ -8,28 +9,75 @@ from logger import GLOBAL_LOGGER as log
 from utils.config_loader import load_config
 import asyncio
 
+class ApiKeyManager:
+    REQUIRED_KEYS = ["GROQ_API_KEY","GOOGLE_API_KEY"]
+    
+    def __init__(self) -> None:
+        self.api_keys = {}
+        raw = os.getenv("API_KEYS")
+        
+        if raw:
+            try:
+                parsed = json.loads(raw)
+                if not isinstance(parsed, dict):
+                    raise ValueError("API_KEYS is not a valid JSON object")
+                self.api_keys = parsed
+                log.info("Loaded API_KEYS from ECS secret")
+            except Exception as e:
+                log.warning("Failed to parse API_KEYS as JSON", error =str(e))
+        
+        # Fallback retrieving in directly from env variable
+        for key in self.REQUIRED_KEYS:
+            if not self.api_keys.get(key):
+                env_val = os.getenv(key)
+                if env_val:
+                    self.api_keys[key] = env_val
+                    log.info(f"Loaded {key} from individual env variable")
+        
+        # Final check for missing keys and values
+        missing = [k for k in self.REQUIRED_KEYS if not self.api_keys.get(k)]
+        if missing:
+            log.error("Missing required API keys", missing_keys = missing)
+            raise DocumentPortalException("Missing API keys")
+        
+        log.info("API keys loaded", keys = {k: v[:6]+"..." for k,v in self.api_keys.items()})
+    
+    def get(self, key:str)-> str:
+        val = self.api_keys.get(key)
+        if not val:
+            raise KeyError(f"API KEY for {key} is missing")
+        return val
 
 class ModelLoader:
     """
-    A utility class to load embedding mdoels and language models.
+    A utility class to load embedding models and language models.
     """
     def __init__(self):
-        load_dotenv()
-        self._validate_env()
+        # load_dotenv()
+        # self._validate_env()
+        # self.config = load_config()
+        # log.info("Configuration loaded successfully", config=self.config)
+        if os.getenv("ENV","local").lower() != "production":
+            load_dotenv()
+            log.info("Running in LOCAL mode: .env loaded")
+        else:
+            log.info("Running in PRODUCTION mode")
+
+        self.api_key_mgr = ApiKeyManager()
         self.config = load_config()
-        log.info("Configuration loaded successfully", config=self.config)
+        log.info("Configuration loaded successfully from YAML file", config_keys=list(self.config.keys()))
         
-    def _validate_env(self):
-        """
-        Validate neccesarry environment variables.
-        """
-        required_env_vars = ["GOOGLE_API_KEY", "GROQ_API_KEY"]
-        self.api_keys = {key:os.getenv(key) for key in required_env_vars}
-        missing_keys = [k for k,v in self.api_keys.items() if not v]
-        if missing_keys:
-            log.error("Missing required environment variables", missing_keys=missing_keys)
-            raise DocumentPortalException(f"Missing required environment variables:" + "".join(missing_keys)) # type: ignore
-        log.info("Environment variables validated", available_keys=[k for k in self.api_keys.keys() if self.api_keys[k]])
+    # def _validate_env(self):
+    #     """
+    #     Validate neccesarry environment variables.
+    #     """
+    #     required_env_vars = ["GOOGLE_API_KEY", "GROQ_API_KEY"]
+    #     self.api_keys = {key:os.getenv(key) for key in required_env_vars}
+    #     missing_keys = [k for k,v in self.api_keys.items() if not v]
+    #     if missing_keys:
+    #         log.error("Missing required environment variables", missing_keys=missing_keys)
+    #         raise DocumentPortalException(f"Missing required environment variables:" + "".join(missing_keys)) # type: ignore
+    #     log.info("Environment variables validated", available_keys=[k for k in self.api_keys.keys() if self.api_keys[k]])
         
     def load_embeddings(self):
         """
@@ -42,7 +90,8 @@ class ModelLoader:
                 asyncio.get_running_loop()
             except RuntimeError:
                 asyncio.set_event_loop(asyncio.new_event_loop())
-            embedding_model = GoogleGenerativeAIEmbeddings(model=model_name)
+            embedding_model = GoogleGenerativeAIEmbeddings(model=model_name, 
+                                                           google_api_key=self.api_key_mgr.get("GOOGLE_API_KEY")) #type: ignore
             log.info("Embedding model loaded successfully", model_name=model_name)
             return embedding_model
         except Exception as e:
@@ -55,7 +104,7 @@ class ModelLoader:
         """
         llm_block = self.config["llm"]
         # Set default provider to "groq" if not specified
-        provider_key = os.getenv("LLM_PROVIDER", "groq")
+        provider_key = os.getenv("LLM_PROVIDER", "google")
         if provider_key not in llm_block:
             log.error(f"LLM provider not found in configuration.", provider_key = provider_key)
             raise DocumentPortalException(f"LLM provider {provider_key} not found in configuration")
@@ -73,14 +122,14 @@ class ModelLoader:
                 model=model_name,
                 temperature=temperature,
                 max_output_tokens=max_tokens,
-                api_key= self.api_keys["GOOGLE_API_KEY"]
+                api_key= self.api_key_mgr.get("GOOGLE_API_KEY")
             )
             return llm
         elif provider == "groq":
             llm = ChatGroq(
                 model=model_name,
                 temperature=temperature,
-                api_key=self.api_keys["GROQ_API_KEY"] # type: ignore
+                api_key=self.api_key_mgr.get("GROQ_API_KEY") # type: ignore
             )
             return llm
         else:
